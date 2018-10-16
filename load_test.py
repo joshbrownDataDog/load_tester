@@ -1,16 +1,23 @@
-import sys, traceback, socket
-from time import sleep
-import random
-import string
+import sys, traceback, socket, random, string, signal
+from time import sleep, time
+
+class TimeoutException(Exception):   # Custom exception class
+    pass
+
+def timeout_handler(signum, frame):   # Custom signal handler
+    raise TimeoutException
 
 def main(run_time_parameters):
   
   try:
     print('**** Starting loop ****\n')
     print('Configured values for load test')
+
+    # Print configuration parameters
     for item in run_time_parameters:
       print('\n' + item)
       print(run_time_parameters[item])
+
     print('')
 
     number_of_logs_per_second = run_time_parameters['logs_per_second']['value']
@@ -18,27 +25,46 @@ def main(run_time_parameters):
     run_time = run_time_parameters['run_time']['value']
 
     host = socket.gethostbyname(socket.gethostname())
-    
-
     port = run_time_parameters['port']['value']
 
     tcp_connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_connection.connect((host, port))
 
     count = 0
-
+    
     while count < run_time:
-      print('Loop: %s' %count)
 
       messages_sent_this_second = 0
+      elapsed_time = 0
+      start_time = time()
 
-      while messages_sent_this_second <= number_of_logs_per_second:
-        chars = "".join( [random.choice(string.ascii_letters ) for i in range(length_of_log)] )
-        log = 'info:' + chars + '\n'
+      #Set an alarm for 1 second
+      signal.alarm(1)
+      stop = False
 
-        tcp_connection.sendall(log.encode())
+      while messages_sent_this_second < number_of_logs_per_second and stop == False:
+        #Try to exececute code within 1 second time limit
+        try:
+    
+          chars = "".join( [random.choice(string.ascii_letters ) for i in range(length_of_log)] )
+          log = 'info:' + chars + '\n'
 
-        messages_sent_this_second += 1
+          tcp_connection.sendall(log.encode())
+
+          messages_sent_this_second += 1
+
+          elapsed_time = time() - start_time
+        
+        #Failed to execute code in one second. 
+        except TimeoutException:
+          #Set stop to True to insure we go to next loop.
+          stop = True
+          continue
+
+      # Reset alarm to 0 seconds
+      signal.alarm(0)
+
+      print('Loop: %s, Sent %s messages in %s seconds' %(count, messages_sent_this_second, elapsed_time))
 
       count += 1
       
@@ -73,7 +99,7 @@ def main(run_time_parameters):
 def get_run_time_parameters():
 
   # Default run_time_parameters to use if no user inputs
-  run_time_parameters = {'logs_per_second':{'value':10,'discription':'Number of logs to generate per second'},
+  run_time_parameters = {'logs_per_second':{'value':10,'discription':'Number of logs to generate per second. If "max" is entered the program will produce as many logs as possible in 1 second.'},
                         'log_length':{'value':20,'discription':'Number of random characters to generate per log'},
                         'run_time':{'value':60,'discription':'Run time of program if not stopped by user'},
                         'port':{'value':6263,'discription':'Port that datadog is listening for logs on https://docs.datadoghq.com/logs/log_collection/?tab=streamlogsfromtcpudp#stream-logs-through-tcp-udp'}}
@@ -90,11 +116,23 @@ def get_run_time_parameters():
 
       # If key is in item, attempt to get inputed value and update the run_time_parameters
       if index_of_key != -1:
+
         try:
+
           index_of_colon = item.find(':') + 1
           run_time_parameters[key]['value'] = int(item[index_of_colon:])
+
         except:
-          pass
+          # If the user specifies max for for logs per second. We set the value to an extreamly large number so that the execution time will take more 
+          # than 1 second to complete.
+          if key == 'logs_per_second':
+            if item.find('max') != -1:
+              run_time_parameters[key]['value'] = 10000000000000000000000
+            else:
+              pass
+          else:
+            pass
+
         
 
   return run_time_parameters
@@ -130,6 +168,8 @@ def help(run_time_parameters):
 # Initializaiton function
 if __name__ == "__main__":
   run_time_parameters = get_run_time_parameters()
+
+  signal.signal(signal.SIGALRM, timeout_handler)
 
   print('Running Load Tester\n')
 
