@@ -48,7 +48,7 @@ def main(run_time_parameters):
     
           chars = "".join( [random.choice(string.ascii_letters ) for i in range(length_of_log)] )
           log = 'info:' + chars + '\n'
-          
+
           tcp_connection.sendall(log.encode())
 
           messages_sent_this_second += 1
@@ -147,7 +147,7 @@ def help(run_time_parameters):
     if index_of_key != -1:
       print('\n\n\n*** Help for load_test.py ***\n')
 
-      print('This script requires runs on python 3.7 or later\n')
+      print('This script requires runs on python 3.6 or later\n')
 
       run_script_text = "Run script via: python3 load_test.py "
 
