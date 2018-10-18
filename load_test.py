@@ -25,6 +25,7 @@ def main(run_time_parameters):
     run_time = run_time_parameters['run_time']['value']
 
     host = socket.gethostbyname(socket.gethostname())
+    
     port = run_time_parameters['port']['value']
 
     tcp_connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -47,7 +48,7 @@ def main(run_time_parameters):
         try:
     
           chars = "".join( [random.choice(string.ascii_letters ) for i in range(length_of_log)] )
-          log = 'info:' + chars + '\n'
+          log = 'Info:' + chars + '\n'
 
           tcp_connection.sendall(log.encode())
 
@@ -102,7 +103,7 @@ def get_run_time_parameters():
   run_time_parameters = {'logs_per_second':{'value':10,'discription':'Number of logs to generate per second. If "max" is entered the program will produce as many logs as possible in 1 second.'},
                         'log_length':{'value':20,'discription':'Number of random characters to generate per log'},
                         'run_time':{'value':60,'discription':'Run time of program if not stopped by user'},
-                        'port':{'value':6263,'discription':'Port that datadog is listening for logs on https://docs.datadoghq.com/logs/log_collection/?tab=streamlogsfromtcpudp#stream-logs-through-tcp-udp'}}
+                        'port':{'value':10518,'discription':'Port that datadog is listening for logs on https://docs.datadoghq.com/logs/log_collection/?tab=streamlogsfromtcpudp#stream-logs-through-tcp-udp'}}
 
   # Check to see if user asked for help                    
   help(run_time_parameters)
@@ -147,7 +148,7 @@ def help(run_time_parameters):
     if index_of_key != -1:
       print('\n\n\n*** Help for load_test.py ***\n')
 
-      print('This script requires runs on python 3.6 or later\n')
+      print('This script requires runs on python 3.7 or later\n')
 
       run_script_text = "Run script via: python3 load_test.py "
 
