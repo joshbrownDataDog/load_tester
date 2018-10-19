@@ -32,6 +32,11 @@ def main(run_time_parameters):
     tcp_connection.connect((host, port))
 
     count = 0
+
+    #Dictionary of performance stats for run.
+    run_stats = {'length_of_time':{'text':'Run Time: %s seconds','value':time()},
+                'logs_sent':{'text':'Total Logs Generate: %s','value':0},
+                'avg_logs_per_second':{'text':'Average Logs per Second: %s','value':0}}
     
     while count < run_time:
 
@@ -53,6 +58,8 @@ def main(run_time_parameters):
           tcp_connection.sendall(log.encode())
 
           messages_sent_this_second += 1
+
+          run_stats['logs_sent']['value'] += 1
 
           elapsed_time = time() - start_time
         
@@ -77,7 +84,8 @@ def main(run_time_parameters):
   
   # Handle user exiting program   
   except KeyboardInterrupt:
-    print("User Stopped Load Tester \n")
+    print("\n**** User Stopped Load Tester ****\n")
+
 
   # Handle missing required input - number_of_logs_per_second or length_of_log
   except IndexError:
@@ -85,16 +93,50 @@ def main(run_time_parameters):
     
     if len(sys.argv) < 3:
       print('Please run script via: \n python3 load_test.py <number_of_logs_per_second> <length_of_log> \n')
+
+    print_run_stats(run_stats)
   
   # General exception handling
   except Exception:
     print("Error: unhandled exception \n")
     traceback.print_exc(file=sys.stdout)
+
+    print_run_stats(run_stats)
       
   
   print("**** Exiting Load Tester ****")
 
+  print_run_stats(run_stats)
+
   sys.exit(0)
+
+
+# Function to print run stats to consule
+def print_run_stats(run_stats):
+
+  print('')
+
+  for key in run_stats:
+    
+    if key == 'length_of_time':
+      value = time() - run_stats[key]['value']
+
+    elif key == 'avg_logs_per_second':
+      run_time = time() - run_stats['length_of_time']['value']
+
+      total_logs = run_stats['logs_sent']['value']
+
+      value = total_logs/run_time
+
+    else:
+      value = run_stats[key]['value']
+
+    text_to_print = run_stats[key]['text'] %value
+    
+    print(text_to_print)
+
+  print('')
+
 
 # Function to get input paramters 
 def get_run_time_parameters():
